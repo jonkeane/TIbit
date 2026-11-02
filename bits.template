@@ -1,0 +1,202 @@
+bits()
+Prgm
+Local d,c,md,u,s,x,h,n,b,i,r,v,z,k,a,f,t,q,j,y,w,du,df,lo,hi,p,ht,sc,bc
+getMode("ALL")→md
+Try
+setMode({"Base","DEC","Exact/Approx","AUTO","Split Screen","FULL"})
+@DIAMETERS@
+@CODES@
+dim(d)→n
+2→u
+""→s
+0→z
+Loop
+ Dialog
+  Title "Drill bit size"
+  Request "Hole",s,0
+  DropDown "Units",{"in","mm"},u
+ EndDlog
+ If ok=0
+  Exit
+ 0→v
+ Try
+  approx(expr(s))→x
+  If getType(x)="NUM" Then
+   If u=1 Then
+    If x≥0 and x≤1
+     1→v
+   Else
+    If x≥0 and x≤25.4
+     1→v
+   EndIf
+  EndIf
+ Else
+  ClrErr
+ EndTry
+ If v=0 Then
+  Text "Use 0-1 in or 0-25.4 mm."
+ Else
+  If u=1 Then
+   x*5080000→h
+  Else
+   x*200000→h
+  EndIf
+  1→lo
+  n+1→hi
+  h+1/1000000→q
+  While lo<hi
+   intDiv(lo+hi,2)→i
+   If d[i]≤q Then
+    i+1→lo
+   Else
+    i→hi
+   EndIf
+  EndWhile
+  lo-1→p
+  1→b
+  If p>0 Then
+   p→b
+   If p<n Then
+    If abs(d[p+1]-h)<abs(d[p]-h)-1/1000000
+     p+1→b
+   EndIf
+  EndIf
+  While b>1
+   If d[b-1]≠d[b]
+    Exit
+   b-1→b
+  EndWhile
+  b→sc
+  If p>b
+   p→sc
+  sc→bc
+  u→du
+  exact(floor(h/79375+1/2))→q
+  format(x,"f3")→ht
+  If mid(ht,1,1)="."
+   "0"&ht→ht
+  ht&mid("inmm",2*u-1,2)→ht
+  If u=2 Then
+   format(h/5080000,"f3")→w
+   If mid(w,1,1)="."
+    "0"&w→w
+   ht&" "&w&"in"→ht
+  EndIf
+  ht&" ~"&string(q/64)&"in"→ht
+  Loop
+   {0,0,0,0,0,0}→r
+   For j,1,6
+    sc+j-3→i
+    If i≥1 and i≤n Then
+     If b≤p Then
+      If i=p Then
+       b→i
+      ElseIf i≥b and i<p Then
+       i+1→i
+      EndIf
+     EndIf
+     i→r[j]
+    EndIf
+   EndFor
+   If du=1 Then
+    5080000→df
+    "f4"→f
+   Else
+    200000→df
+    "f3"→f
+   EndIf
+   ClrIO
+   Output 0,0,ht
+   Output 8,6,"Bit"
+   Output 8,56,"D "&mid("inmm",2*du-1,2)
+   Output 8,104,"d "&mid("inmm",2*du-1,2)
+   For j,1,6
+    8*(j+1)→y
+    ""→t
+    If r[j]=b Then
+     "*"→t
+    ElseIf j=1 and bc<sc-2 Then
+     "↑"→t
+    ElseIf j=6 and bc>sc+3 Then
+     "↓"→t
+    EndIf
+    Output y,0,t
+    If r[j]=0 Then
+     Output y,6,"--"
+    Else
+     r[j]→i
+     c[i]→a
+     If a≤80 Then
+      "#"&format(81-a,"f0")→t
+     ElseIf a≤106 Then
+      char(a-16)→t
+     ElseIf a≤170 Then
+      string((a-106)/64)&"in"→t
+     Else
+      If a≤276 Then
+       (a-166)/10→q
+      Else
+       (a-254)/2→q
+      EndIf
+      format(q,"f1")&"mm"→t
+     EndIf
+     Output y,6,t
+     format(d[i]/df,f)→w
+     If mid(w,1,1)="."
+      "0"&w→w
+     Output y,56,w
+     d[i]-h→q
+     If abs(q)<1/1000000 Then
+      "="&format(0,f)→t
+     Else
+      "+"→t
+      If q<0
+       "-"→t
+      format(abs(q)/df,f)→w
+      If mid(w,1,1)="."
+       "0"&w→w
+      If expr(w)=0 Then
+       If du=1 Then
+        t&"<.0001"→t
+       Else
+        t&"<.001"→t
+       EndIf
+      Else
+       t&w→t
+      EndIf
+     EndIf
+     Output y,104,t
+    EndIf
+   EndFor
+   Output 64,0,"F1:new F2:center F3:"&mid("inmm",5-2*du,2)&" ESC"
+   Loop
+    getKey()→k
+    If k=338 and sc>1
+     sc-1→sc
+    If k=344 and sc<n
+     sc+1→sc
+    If k=269
+     bc→sc
+    If k=268 or k=269 or k=270 or k=264 or k=338 or k=344
+     Exit
+   EndLoop
+   If k=270
+    3-du→du
+   If k=268
+    Exit
+   If k=264 Then
+    1→z
+    Exit
+   EndIf
+  EndLoop
+ EndIf
+ If z=1
+  Exit
+EndLoop
+Else
+ setMode(md)
+ PassErr
+EndTry
+setMode(md)
+DispHome
+EndPrgm
